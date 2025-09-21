@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Download, AlertTriangle, CheckCircle, Camera } from "lucide-react";
+import Image from "next/image";
 
 // Component to handle image loading with multiple fallback attempts
 function ImageWithFallback({ imageUrl, alt }: { imageUrl: string; alt: string }) {
@@ -36,7 +37,6 @@ function ImageWithFallback({ imageUrl, alt }: { imageUrl: string; alt: string })
   const handleError = () => {
     // Log failed attempt for debugging
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
       console.error(`Image load attempt ${currentAttempt + 1} failed:`, getImageUrl(currentAttempt));
     }
     
@@ -99,13 +99,16 @@ function ImageWithFallback({ imageUrl, alt }: { imageUrl: string; alt: string })
   }
 
   return (
-    <img
-      key={currentAttempt} // Force re-render on URL change
-      src={getImageUrl(currentAttempt)}
-      alt={alt}
-      className="w-full h-auto max-h-96 object-contain"
-      onError={handleError}
-    />
+    <div className="relative w-full h-96">
+      <Image
+        key={currentAttempt} // Force re-render on URL change
+        src={getImageUrl(currentAttempt)}
+        alt={alt}
+        fill
+        style={{ objectFit: 'contain' }}
+        onError={() => handleError()} // Pass a function reference
+      />
+    </div>
   );
 }
 

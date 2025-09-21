@@ -1,18 +1,22 @@
 "use client";
 
 import React from "react";
-import { SparklesCore } from "@/components/ui/sparkles";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { AuroraText } from "@/components/ui/aurora-text";
 import { TypewriterEffectSmooth } from "@/components/ui/typewriter-effect";
-import { TypingAnimation } from "@/components/ui/typing-animation";
-import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
-import { ScrollReveal, StaggeredReveal } from "@/components/ui/scroll-reveal";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { ArrowRight, Shield, Zap, Camera, Brain, Users, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <main className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Consistent Black Background */}
@@ -23,27 +27,29 @@ export default function Home() {
       </div>
 
       {/* Floating Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[2]">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/20 rounded-full"
-            initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-            }}
-            animate={{
-              y: [null, -100, window.innerHeight + 100],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 10,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
+      {isClient && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[2]">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-white/20 rounded-full"
+              initial={{
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+              }}
+              animate={{
+                y: [null, -100, window.innerHeight + 100],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: Math.random() * 10 + 10,
+                repeat: Infinity,
+                delay: Math.random() * 5,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Gradient Orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse pointer-events-none z-[2]"></div>
