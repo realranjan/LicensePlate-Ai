@@ -112,7 +112,7 @@ function ImageWithFallback({ imageUrl, alt }: { imageUrl: string; alt: string })
 interface DetectionResult {
   image_url: string;
   detections: string;
-  riders_without_helmets: string[];
+  riders_without_helmets?: string[];
   processing_time?: number;
 }
 
@@ -229,7 +229,7 @@ export function ResultsSection({ result, onBack }: ResultsSectionProps) {
               
               <p className={`text-sm ${hasViolations ? 'text-red-300' : 'text-green-300'}`}>
                 {hasViolations 
-                  ? `${result.riders_without_helmets.length} rider(s) without helmet detected`
+                  ? `${result.riders_without_helmets?.length || 0} rider(s) without helmet detected`
                   : 'All riders are wearing helmets'
                 }
               </p>
