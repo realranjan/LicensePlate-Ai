@@ -25,5 +25,4 @@ COPY . .
 
 EXPOSE 5000
 
-# Default command if no specific command is provided
 CMD ["uvicorn", "fastapi_service.main:app", "--host", "0.0.0.0", "--port", "5000"]
