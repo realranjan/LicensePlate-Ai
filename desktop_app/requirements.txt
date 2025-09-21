@@ -1,0 +1,28 @@
+# Desktop GUI Application Dependencies
+# Install root requirements.txt first: pip install -r ../requirements.txt
+# Note: tkinter is included with Python standard library on most systems
+
+# GUI Framework (tkinter is built-in, these are enhancements)
+Pillow==10.0.1  # Image handling in GUI
+tkinter-tooltip==2.1.0  # Enhanced tooltips
+
+# System operations
+psutil==5.9.6  # System and process utilities
+
+# File operations
+pathlib2==2.3.7  # Enhanced path handling (Python < 3.4 compatibility)
+send2trash==1.8.2  # Safe file deletion
+
+# GUI enhancements (optional)
+tkfilebrowser==2.3.2  # Enhanced file dialogs
+ttkthemes==3.2.2  # Additional GUI themes
+
+# Image processing for GUI
+opencv-python==4.8.1.78  # Computer vision
+numpy==1.24.3  # Array operations
+
+# Threading and async operations
+# Note: threading module is built into Python standard library
+
+# Configuration
+configparser==6.0.0  # Configuration file handling
