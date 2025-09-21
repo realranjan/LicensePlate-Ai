@@ -141,16 +141,6 @@ runs/
 wandb/
 .neptune/
 
-# Data files
-*.csv
-*.json
-*.xml
-*.yaml
-*.yml
-data/raw/
-data/processed/
-data/external/
-
 # Output directories
 outputs/detections/
 outputs/crops/
@@ -209,7 +199,6 @@ static/rest_framework/
 # Project specific directories to ignore
 ml_models/yolov5/
 my-app/
-data/
 outputs/
 .next/
 node_modules/
