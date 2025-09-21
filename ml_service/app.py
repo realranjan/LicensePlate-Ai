@@ -1,47 +1,57 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
-import os
-from pathlib import Path
+import argparse
+import io
 import torch
-import numpy as np
-import cv2
+from flask import Flask, request, jsonify
 from PIL import Image
 import sys
-import json
+from pathlib import Path
 
-app = FastAPI()
+# Add YOLOv5 root to sys.path
+# Assuming ml_service/yolov5 is the YOLOv5 root
+FILE = Path(__file__).resolve()
+def find_yolov5_root(current_path):
+    # Go up directories until yolov5 is found or max depth reached
+    for _ in range(5): # Limit search depth
+        if (current_path / "yolov5").is_dir():
+            return current_path / "yolov5"
+        current_path = current_path.parent
+    return None # Not found
 
-sys.path.append(str(Path(__file__).parent / "yolov5"))
-from yolov5.models.common import DetectMultiBackend
-from yolov5.utils.general import (non_max_suppression, scale_boxes, check_img_size)
-from yolov5.utils.torch_utils import select_device
+YOLOV5_ROOT = find_yolov5_root(FILE.parent)
 
-# Define paths relative to the current file (main.py)
-YOLOV5_ROOT = Path(__file__).parent / "yolov5"
-WEIGHTS_PATH = Path(__file__).parent / "data" / "models" / "1500img.pt"
+if YOLOV5_ROOT and str(YOLOV5_ROOT) not in sys.path:
+    sys.path.append(str(YOLOV5_ROOT))
 
-# Load model globally when the FastAPI app starts up
+# Import YOLOv5 components
+from models.common import DetectMultiBackend
+from utils.general import non_max_suppression, scale_boxes, check_img_size
+from utils.torch_utils import select_device
+
+app = Flask(__name__)
+
+# Load model globally when the Flask app starts up
+# Update WEIGHTS_PATH to point to your model in ml_service/data/models
+WEIGHTS_PATH = FILE.parent / "data" / "models" / "1500img.pt"
 device = select_device("") # "" for CPU, "0" for GPU 0, etc.
 model = DetectMultiBackend(WEIGHTS_PATH, device=device, dnn=False, data=YOLOV5_ROOT / "data/coco128.yaml", fp16=False)
 stride, names, pt = model.stride, model.names, model.pt
 imgsz = check_img_size((640, 640), s=stride) # inference size
 
-@app.post("/detect-license-plate/")
-async def detect_license_plate(file: UploadFile = File(...)):
-    """
-    Receives an image, forwards it to the ML Models service, and returns the detection results.
-    """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are allowed.")
+@app.route("/predict", methods=["POST"])
+def predict():
+    if request.method != "POST":
+        return jsonify({"error": "Only POST requests are accepted"}), 405
 
-    try:
-        image_data = await file.read()
-        image = Image.open(BytesIO(image_data))
-        image_np = np.array(image)
-        # Convert RGB to BGR for OpenCV processing
-        im0 = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    if request.files.get("file"):
+        im_file = request.files["file"]
+        im_bytes = im_file.read()
+        img = Image.open(io.BytesIO(im_bytes))
 
         # Prepare image for inference
+        # Convert PIL Image to OpenCV format (BGR)
+        im0 = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+        # Apply letterbox padding (function from YOLOv5 utils)
         img = letterbox(im0, imgsz, stride=stride, auto=pt)[0]
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, RGB to BGR
         img = np.ascontiguousarray(img)
@@ -59,15 +69,13 @@ async def detect_license_plate(file: UploadFile = File(...)):
 
         detections_list = []
         riders_without_helmets = []
-        
+
         # Process predictions
         for i, det in enumerate(pred):
-            s = "" # string for logging
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(img.shape[2:], det[:, :4], im0.shape).round()
 
-                # Filter detections to find license plates and riders for helmet detection
                 license_plates = []
                 riders = []
                 for *xyxy, conf, cls in reversed(det):
@@ -75,35 +83,30 @@ async def detect_license_plate(file: UploadFile = File(...)):
                     label = names[c]
                     confidence = float(conf)
                     bbox = [int(x) for x in xyxy]
-                    
+
                     detections_list.append({
                         "box": bbox,
                         "label": label,
                         "confidence": confidence
                     })
-                    
-                    if label == "license-plate": # Assuming "license-plate" is one of your classes
+
+                    if label == "license-plate":
                         license_plates.append({"box": bbox, "confidence": confidence})
-                    elif label == "rider": # Assuming "rider" is one of your classes
+                    elif label == "rider":
                         riders.append({"box": bbox, "confidence": confidence})
-                
-                # Simple helmet detection logic (you might need a more sophisticated approach)
-                # This assumes if a rider is detected, there should be a helmet detection associated
-                # within a certain proximity. For simplicity, we'll just check if any "helmet" class is present.
+
                 has_helmet_detection = any(d["label"] == "helmet" for d in detections_list)
                 if len(riders) > 0 and not has_helmet_detection:
                     riders_without_helmets.append("A rider was detected without a helmet.")
-            
-        return JSONResponse(content={
+
+        return jsonify({
             "success": True,
-            "image_url": "processed_image_url_placeholder", # You might want to upload processed image
-            "detections": json.dumps(detections_list),
+            "detections": detections_list,
             "riders_without_helmets": riders_without_helmets,
             "processing_time": 0 # TODO: Add actual processing time calculation
         })
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred during detection: {e}")
+    return jsonify({"error": "No image file provided"}), 400
 
 def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
     # Resize and pad image while maintaining aspect ratio
@@ -136,7 +139,10 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, r, (dw, dh)
 
-@app.get("/")
-@app.head("/")  # Add this line to allow HEAD requests
-async def root():
-    return {"message": "Welcome to the FastAPI License Plate Detection API!"}
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", default=5000, type=int, help="port number")
+    opt = parser.parse_args()
+
+    # The model is loaded globally, no need to load here again
+    app.run(host="0.0.0.0", port=opt.port) # debug=True causes Restarting with stat
