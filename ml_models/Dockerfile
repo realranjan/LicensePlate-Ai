@@ -1,6 +1,6 @@
 FROM python:3.10-slim-bullseye
 
-WORKDIR /app/ml_models
+WORKDIR /app
 
 ENV PYTHONUNBUFFERED 1
 
@@ -26,4 +26,4 @@ COPY . .
 EXPOSE 5000
 
 # Default command if no specific command is provided
-CMD ["python", "detection/detect2.py", "--source", "data/images/samples/KA63U5588.jpg", "--save-txt", "--save-conf"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "ml_models.yolov5.utils.flask_rest_api.restapi:app"]
