@@ -137,14 +137,6 @@ dmypy.json
 .pyre/
 
 # Machine Learning specific
-*.pt
-*.pth
-*.onnx
-*.pb
-*.h5
-*.hdf5
-*.pkl
-*.pickle
 runs/
 wandb/
 .neptune/
@@ -158,15 +150,6 @@ wandb/
 data/raw/
 data/processed/
 data/external/
-
-# Large model files (keep structure but ignore large files)
-data/models/*.pt
-data/models/*.pth
-data/models/*.onnx
-
-# Database files
-data/databases/*.sqlite3
-data/databases/*.db
 
 # Output directories
 outputs/detections/
