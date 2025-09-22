@@ -64,7 +64,7 @@ def quantize_yolov5_model(weights_path, data_yaml_path, imgsz=(640, 640), output
                 dummy_img = np.transpose(dummy_img, (2, 0, 1)) # HWC to CHW
                 yield [torch.from_numpy(dummy_img).unsqueeze(0)] # Add batch dim
 
-        def transform_fn(dat-item):
+        def transform_fn(data_item):
             """
             Quantization transform function.
             Extracts and preprocess input data from dataloader item for quantization.
