@@ -23,7 +23,12 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Clone YOLOv5 repository
+RUN git clone https://github.com/ultralytics/yolov5.git /app/yolov5
+
+# Copy application files
+COPY app.py /app/app.py
+COPY data /app/data
 
 EXPOSE 5000
 
