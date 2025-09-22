@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 # Clone YOLOv5 repository
 RUN git clone https://github.com/ultralytics/yolov5.git /app/yolov5
 
