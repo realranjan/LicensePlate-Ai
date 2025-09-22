@@ -82,6 +82,7 @@ def quantize_yolov5_model(weights_path, data_yaml_path, imgsz=(640, 640), output
 
     # Save quantized OpenVINO IR model
     quantized_model_path = output_dir / f"{weights_path.stem}_int8_openvino_model"
+    quantized_model_path.mkdir(parents=True, exist_ok=True)
     ov.serialize(ov_model, str(quantized_model_path / f"{weights_path.stem}.xml"))
     LOGGER.info(f"Quantized OpenVINO model saved to {quantized_model_path}")
 

@@ -15,9 +15,9 @@ YOLOV5_ROOT = Path("/app") / "yolov5"
 if str(YOLOV5_ROOT) not in sys.path:
     sys.path.append(str(YOLOV5_ROOT))
 
-from models.common import DetectMultiBackend # Keep for utility functions if needed, but not for model loading
-from utils.general import non_max_suppression, scale_boxes, check_img_size, non_max_suppression_openvino # Adjusted for OpenVINO
-from utils.torch_utils import select_device # Will not be used for OpenVINO model loading
+from models.common import DetectMultiBackend # Keep for metadata (names/stride)
+from utils.general import non_max_suppression, scale_boxes, check_img_size
+from utils.torch_utils import select_device
 
 app = Flask(__name__)
 
@@ -39,10 +39,10 @@ try:
     # For simplicity, we'll assume constants or extract from a dummy PyTorch model for names
     # In a full conversion, names would be embedded or passed through configuration
     # As a fallback, we can load a dummy PyTorch model to get names
-    dummy_pt_model = DetectMultiBackend(Path("/app") / "data" / "models" / "yolov5s.pt", device=torch.device("cpu"), dnn=False, data=YOLOV5_ROOT / "data/coco.yaml", fp16=False)
+    dummy_pt_model = DetectMultiBackend(Path("/app") / "data" / "models" / "yolov5s.pt", device=torch.device("cpu"), dnn=False, data=YOLOV5_ROOT / "data" / "coco.yaml", fp16=False)
     names = dummy_pt_model.names
     stride = dummy_pt_model.stride
-    imgsz = dummy_pt_model.imgsz
+    imgsz = (416, 416)
 except Exception as e:
     print(f"Error loading OpenVINO model: {e}", file=sys.stderr)
     sys.exit(1)
@@ -70,8 +70,8 @@ def predict():
         # OpenVINO Inference
         results = compiled_model([img_preprocessed])[output_layer]
 
-        # Post-process results using YOLOv5 NMS
-        pred = non_max_suppression_openvino(torch.from_numpy(results).to("cpu"), conf_thres=0.25, iou_thres=0.45, classes=None, agnostic_nms=False, max_det=1000)
+        # Post-process results using YOLOv5 NMS on CPU tensor
+        pred = non_max_suppression(torch.from_numpy(results), conf_thres=0.25, iou_thres=0.45, classes=None, agnostic_nms=False, max_det=1000)
 
         detections_list = []
         riders_without_helmets = []
