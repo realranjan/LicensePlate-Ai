@@ -69,7 +69,7 @@ def quantize_yolov5_model(weights_path, data_yaml_path, imgsz=(640, 640), output
             Quantization transform function.
             Extracts and preprocess input data from dataloader item for quantization.
             """
-            img = dat-item[0].numpy().astype(np.float32)  # uint8 to fp16/32
+            img = data_item[0].numpy().astype(np.float32)  # uint8 to fp16/32
             img /= 255.0  # 0 - 255 to 0.0 - 1.0
             return np.expand_dims(img, 0) if img.ndim == 3 else img
 
